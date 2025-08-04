@@ -1,0 +1,10 @@
+name: bfv2_prep
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.9
+  - pyrodigal
+  - biopython
+  - snakemake
+  - natsort
