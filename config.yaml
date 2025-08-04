@@ -1,0 +1,11 @@
+#output directory
+output_dir: /nfs/research/jlees/shorsfield/all_Ecoli_collection/WTBCluster_AtB_BSAC_NORM_50perc
+
+# tsv file with an absolute file path per line
+file_list: /nfs/research/jlees/shorsfield/all_Ecoli_collection/E_coli_0.1_combined_genomes.txt
+
+# number of batches for saving pyrodigal files (change to avoid overloading file system with output files)
+pyrodigal_input_batches: 20
+
+# number of batches to store paths to pyrodigal outputs
+pyrodigal_output_batches: 1
