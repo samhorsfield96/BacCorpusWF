@@ -103,5 +103,4 @@ def run_pyrodigal(file_list, output_dir):
                     for i in range(0, seq_len, 60):
                         o_gff.write(sequence[i:i+60] + "\n")
 
-run_pyrodigal("/hps/software/users/jlees/shorsfield/software/bfv2_prep/test_genomes.txt", "/nfs/research/jlees/shorsfield/all_Ecoli_collection/WTB_testing")
-#run_pyrodigal(snakemake.input.batch_file, snakemake.output.outdir)
+run_pyrodigal(snakemake.input.batch_file, snakemake.output.outdir)

@@ -3,14 +3,14 @@ import os
 
 configfile: "config.yaml"
 
-def get_path(wildcards):
+def get_paths(wildcards):
     checkpoint_output = checkpoints.list_pyrodigal_full.get(**wildcards).output[0]
     return expand("{out_dir}/pyrodigal_output_batches/gff_batch_N{batch_ID}.txt", out_dir=config['output_dir'], batch_ID=range(config['pyrodigal_output_batches']))
     
 # Define the final output
 rule all:
    input:
-        get_tokenized_genomes
+        get_paths
 
 checkpoint split_file_batch:
     input:
