@@ -5,7 +5,7 @@ configfile: "config.yaml"
 
 def get_path(wildcards):
     checkpoint_output = checkpoints.list_pyrodigal_full.get(**wildcards).output[0]
-    return expand("{out_dir}/tokenised_genomes/tokenized_genomes_batch_{batch_ID}.txt", out_dir=config['output_dir'], batch_ID=range(config['pyrodigal_num_batches']))
+    return expand("{out_dir}/pyrodigal_output_batches/gff_batch_N{batch_ID}.txt", out_dir=config['output_dir'], batch_ID=range(config['pyrodigal_output_batches']))
     
 # Define the final output
 rule all:
@@ -43,5 +43,5 @@ checkpoint list_pyrodigal_full:
         output_dir=directory(f"{config['output_dir']}/pyrodigal_output_batches"),
     params:
         pyrodigal_output_batches=f"{config['pyrodigal_output_batches']}",
-        outpref="mmseqs2_batch_N"
+        outpref="gff_batch_N"
     script: "scripts/split_pyrodigal_output.py"
