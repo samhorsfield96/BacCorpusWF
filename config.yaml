@@ -5,7 +5,10 @@ output_dir: /path/to/output/directory
 file_list: /path/to/input/file
 
 # number of batches for processing and saving pyrodigal files (change to avoid overloading file system with output files).
-pyrodigal_input_batches: 1
+pyrodigal_input_batches: 3
 
 # number of batches to store paths to pyrodigal outputs.
 pyrodigal_output_batches: 1
+
+# choice of output method, either "gff" or "gbff"
+output_method: "gbff"

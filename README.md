@@ -28,6 +28,12 @@ Update `config.yaml` to specify workflow and directory paths.
 - `pyrodigal_input_batches`: number of batches to split the `file_list` into for pyrodigal processing.
 - `pyrodigal_output_batches`: number of batches to split the `file_list` into after pyrodigal.
 
+The `file_list` can be generated using the following command in the directory containing the `.fasta` files:
+
+```
+ls -d -1 $PWD/*.fasta > input.txt
+```
+
 Run snakemake (must be in same directory as `Snakemake` file):
 
 ```

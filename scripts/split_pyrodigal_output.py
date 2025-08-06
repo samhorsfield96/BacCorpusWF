@@ -14,7 +14,7 @@ def split_file(dir_list, num_splits, output_dir, outpref):
     all_gff_files = []
 
     for ann_dir in dir_list:
-        all_gff_files.extend(natsorted(glob.glob(ann_dir + "/*.gff")))
+        all_gff_files.extend(natsorted(glob.glob(ann_dir + "/*ff")))
 
     total_files = len(all_gff_files)
     lines_per_split = math.ceil(total_files / num_splits)

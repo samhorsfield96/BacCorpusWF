@@ -5,7 +5,7 @@ configfile: "config.yaml"
 
 def get_paths(wildcards):
     checkpoint_output = checkpoints.list_pyrodigal_full.get(**wildcards).output[0]
-    return expand("{out_dir}/pyrodigal_output_batches/gff_batch_N{batch_ID}.txt", out_dir=config['output_dir'], batch_ID=range(config['pyrodigal_output_batches']))
+    return expand("{out_dir}/pyrodigal_output_batches/batch_N{batch_ID}.txt", out_dir=config['output_dir'], batch_ID=range(config['pyrodigal_output_batches']))
     
 # Define the final output
 rule all:
@@ -22,26 +22,39 @@ checkpoint split_file_batch:
         outpref="pyrodigal_batch_N"
     script: "scripts/split_pyrodigal_input.py"
 
-rule pyrodigal:
-    input:
-        batch_file=f"{config['output_dir']}/pyrodigal_input_batches/pyrodigal_batch_N{{batch_ID}}.txt"
-    output:
-        outdir=directory(f"{config['output_dir']}/pyrodigal_annotations/batch_{{batch_ID}}_ann"),
-    conda:
-        "WTBcluster"
-    threads: 1
-    script: "scripts/run_pyrodigal_intergenic.py"
-
 def get_pyrodigal_outputs(wildcards):
     checkpoint_output = checkpoints.split_file_batch.get(**wildcards).output[0]
     return expand("{out_dir}/pyrodigal_annotations/batch_{batch_ID}_ann", out_dir=config['output_dir'], batch_ID=range(config['pyrodigal_input_batches']))
 
+if config['output_method'] in ["gff"]:
+    rule pyrodigal_gff:
+        input:
+            batch_file=f"{config['output_dir']}/pyrodigal_input_batches/pyrodigal_batch_N{{batch_ID}}.txt"
+        output:
+            outdir=directory(f"{config['output_dir']}/pyrodigal_annotations/batch_{{batch_ID}}_ann"),
+        conda:
+            "bfv2_prep"
+        threads: 1
+        script: "scripts/run_pyrodigal_intergenic.py"
+
+elif config['output_method'] in ["gbff"]:
+    rule pyrodigal_gbff:
+        input:
+            batch_file=f"{config['output_dir']}/pyrodigal_input_batches/pyrodigal_batch_N{{batch_ID}}.txt"
+        output:
+            outdir=directory(f"{config['output_dir']}/pyrodigal_annotations/batch_{{batch_ID}}_ann"),
+        conda:
+            "bfv2_prep"
+        threads: 1
+        script: "scripts/run_pyrodigal_intergenic_gbff.py"
+
+
 checkpoint list_pyrodigal_full:
-    input:
-        dir_list=get_pyrodigal_outputs,
-    output:
-        output_dir=directory(f"{config['output_dir']}/pyrodigal_output_batches"),
-    params:
-        pyrodigal_output_batches=f"{config['pyrodigal_output_batches']}",
-        outpref="gff_batch_N"
-    script: "scripts/split_pyrodigal_output.py"
+        input:
+            dir_list=get_pyrodigal_outputs,
+        output:
+            output_dir=directory(f"{config['output_dir']}/pyrodigal_output_batches"),
+        params:
+            pyrodigal_output_batches=f"{config['pyrodigal_output_batches']}",
+            outpref="batch_N"
+        script: "scripts/split_pyrodigal_output.py"
