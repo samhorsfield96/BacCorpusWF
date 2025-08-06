@@ -27,6 +27,7 @@ Update `config.yaml` to specify workflow and directory paths.
 - `file_list`: path to file containing paths to FASTA files (gzipped or uncompressed), one per line.
 - `pyrodigal_input_batches`: number of batches to split the `file_list` into for pyrodigal processing.
 - `pyrodigal_output_batches`: number of batches to split the `file_list` into after pyrodigal.
+- `output_method`: whether to output as gff or gbff. Must be one of `gff` or `gbff`.
 
 The `file_list` can be generated using the following command in the directory containing the `.fasta` files:
 
