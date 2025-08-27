@@ -77,10 +77,14 @@ def return_reps(options):
                 max_distances[genome1] = distance
     
     # go through max_distances to see if any other genomes must be added
+    counter = 0
     for key, value in max_distances.items():
         if key not in to_keep and key not in to_ignore:
             if value < options.threshold:
                 to_keep.add(key)
+                counter += 1
+    
+    print(f"Adding {counter} genomes with all distances below threshold.")
     
     # determine length of to_keep and add random to_ignore to make up remaining missing genomes
     num_keep = len(to_keep)
