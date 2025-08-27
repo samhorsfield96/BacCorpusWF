@@ -8,3 +8,5 @@ dependencies:
   - biopython
   - snakemake
   - natsort
+  - tqdm
+  - pyarrow
