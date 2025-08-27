@@ -90,6 +90,8 @@ def return_reps(options):
 
         if remaining > num_ignore:
             remaining = num_ignore
+        
+        print(f"Adding {remaining} genomes to make up numbers.")
 
         for i in range(0, remaining):
             to_keep.add(to_ignore[i])
