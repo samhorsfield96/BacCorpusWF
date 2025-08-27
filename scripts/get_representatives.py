@@ -86,6 +86,11 @@ def return_reps(options):
     num_keep = len(to_keep)
     remaining = options.min_return - num_keep
     if remaining > 0:
+        num_ignore = len(to_ignore)
+
+        if remaining > num_ignore:
+            remaining = num_ignore
+
         for i in range(0, remaining):
             to_keep.add(to_ignore[i])
 
