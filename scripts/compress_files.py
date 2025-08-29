@@ -2,7 +2,7 @@ import tarfile
 import io
 from Bio import SeqIO
 
-def compress_files(tar_path, inner_name, records_to_write):
+def compress_files_SeqIO(tar_path, inner_name, records_to_write):
     with tarfile.open(tar_path + ".tar.bz2", "w:bz2") as tar:
         buf = io.BytesIO()
         text_handle = io.TextIOWrapper(buf, encoding="utf-8")

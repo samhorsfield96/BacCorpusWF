@@ -128,7 +128,7 @@ def run_pyrodigal(file_list, output_dir, compress):
                 with open(output_path + ".gbff", "w") as out_handle:
                     SeqIO.write(records_to_write, out_handle, "genbank")
             else:
-                compress_files_SeqIO(output_path + ".gbff", basename + ".gbff", basename, records_to_write)
+                compress_files_SeqIO(output_path + ".gbff", basename + ".gbff", records_to_write)
 
 
 run_pyrodigal(snakemake.input.batch_file, snakemake.output.outdir, snakemake.params.compress)
