@@ -32,6 +32,8 @@ if config['output_method'] in ["gff"]:
             batch_file=f"{config['output_dir']}/pyrodigal_input_batches/pyrodigal_batch_N{{batch_ID}}.txt"
         output:
             outdir=directory(f"{config['output_dir']}/pyrodigal_annotations/batch_{{batch_ID}}_ann"),
+        params:
+            compress=f"{config['compress_output']}"
         conda:
             "bfv2_prep"
         threads: 1
@@ -43,6 +45,8 @@ elif config['output_method'] in ["gbff"]:
             batch_file=f"{config['output_dir']}/pyrodigal_input_batches/pyrodigal_batch_N{{batch_ID}}.txt"
         output:
             outdir=directory(f"{config['output_dir']}/pyrodigal_annotations/batch_{{batch_ID}}_ann"),
+        params:
+            compress=f"{config['compress_output']}"
         conda:
             "bfv2_prep"
         threads: 1
@@ -56,5 +60,6 @@ checkpoint list_pyrodigal_full:
             output_dir=directory(f"{config['output_dir']}/pyrodigal_output_batches"),
         params:
             pyrodigal_output_batches=f"{config['pyrodigal_output_batches']}",
-            outpref="batch_N"
+            outpref="batch_N",
+            compress=f"{config['compress_output']}"
         script: "scripts/split_pyrodigal_output.py"

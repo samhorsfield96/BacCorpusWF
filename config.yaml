@@ -12,3 +12,6 @@ pyrodigal_output_batches: 1
 
 # choice of output method, either "gff" or "gbff"
 output_method: "gbff"
+
+# compress gbff, either "True" or "False"
+compress_output: "True"

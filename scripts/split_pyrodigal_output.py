@@ -4,7 +4,7 @@ import math
 import glob
 from natsort import natsorted
 
-def split_file(dir_list, num_splits, output_dir, outpref):
+def split_file(dir_list, num_splits, output_dir, outpref, compress):
     """
     Splits a large set of files into `num_splits` smaller files.
     """
@@ -13,8 +13,13 @@ def split_file(dir_list, num_splits, output_dir, outpref):
 
     all_gff_files = []
 
+    if compress == "False":
+        extension = "/*ff"
+    else:
+        extension = "/*ff.tar.bz2"
+
     for ann_dir in dir_list:
-        all_gff_files.extend(natsorted(glob.glob(ann_dir + "/*ff")))
+        all_gff_files.extend(natsorted(glob.glob(ann_dir + extension)))
 
     total_files = len(all_gff_files)
     lines_per_split = math.ceil(total_files / num_splits)
@@ -36,4 +41,4 @@ def split_file(dir_list, num_splits, output_dir, outpref):
                 if file_index >= total_files:
                     sys.exit(0)
 
-split_file(snakemake.input.dir_list, int(snakemake.params.pyrodigal_output_batches), snakemake.output.output_dir, snakemake.params.outpref)
+split_file(snakemake.input.dir_list, int(snakemake.params.pyrodigal_output_batches), snakemake.output.output_dir, snakemake.params.outpref, snakemake.params.compress)

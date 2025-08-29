@@ -2,6 +2,7 @@ import pyrodigal
 import gzip
 import os
 from datetime import datetime
+from compress_files import *
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -24,7 +25,7 @@ def get_basename(file_path):
     file_name_without_extension, _ = os.path.splitext(base_name)
     return file_name_without_extension
 
-def run_pyrodigal(file_list, output_dir):
+def run_pyrodigal(file_list, output_dir, compress):
     """Trains and runs Pyrodigal on input sequences, outputs ordered gbff with both CDS and intergenic annotations."""
 
     # get todays date
@@ -123,7 +124,11 @@ def run_pyrodigal(file_list, output_dir):
                 records_to_write.append(new_record)
 
             # Write all to GenBank
-            with open(output_path + ".gbff", "w") as out_handle:
-                SeqIO.write(records_to_write, out_handle, "genbank")
+            if compress == "False":
+                with open(output_path + ".gbff", "w") as out_handle:
+                    SeqIO.write(records_to_write, out_handle, "genbank")
+            else:
+                compress_files_SeqIO(output_path + ".gbff", basename + ".gbff", basename, records_to_write)
 
-run_pyrodigal(snakemake.input.batch_file, snakemake.output.outdir)
+
+run_pyrodigal(snakemake.input.batch_file, snakemake.output.outdir, snakemake.params.compress)
