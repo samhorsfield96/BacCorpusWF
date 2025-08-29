@@ -90,7 +90,7 @@ def write_handle(text_handle, basename, orf_finder, sequences):
             text_handle.write(sequence[i:i+60] + "\n")
 
 def compress_files(tar_path, inner_name, basename, orf_finder, sequences, extension):
-    with tarfile.open(tar_path + ".tar" + extension, "w:" + extension) as tar:
+    with tarfile.open(tar_path + ".tar." + extension, "w:" + extension) as tar:
         buf = io.BytesIO()
         text_handle = io.TextIOWrapper(buf, encoding="utf-8")
 

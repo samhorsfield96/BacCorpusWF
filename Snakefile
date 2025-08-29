@@ -33,7 +33,8 @@ if config['output_method'] in ["gff"]:
         output:
             outdir=directory(f"{config['output_dir']}/pyrodigal_annotations/batch_{{batch_ID}}_ann"),
         params:
-            compress=f"{config['compress_output']}"
+            compress=f"{config['compress_output']}",
+            compression_extension=f"{config['compression_type']}"
         conda:
             "bfv2_prep"
         threads: 1
