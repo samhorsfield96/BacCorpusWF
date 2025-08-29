@@ -4,6 +4,8 @@ from Bio import SeqIO
 import argparse
 from multiprocessing import Pool
 from functools import partial
+from tqdm import tqdm
+import os
 
 def compress_files_SeqIO(tar_path, inner_name, records_to_write, extension):
     with tarfile.open(tar_path + ".tar." + extension, "w:" + extension) as tar:
@@ -160,8 +162,8 @@ def main():
             split_line = line.rstrip()
             infile_list.append(split_line)
 
-    with Pool(processes=threads) as pool:
-        for _ in tqdm(pool.imap(partial(read_and_compress, extension=options.extension, delete_original=options.delete), infile_list), total = len(infile_list)):
+    with Pool(processes=options.threads) as pool:
+        for _ in tqdm(pool.imap(partial(read_and_compress, extension=options.type, delete_original=options.delete), infile_list), total = len(infile_list)):
             pass
 
 
