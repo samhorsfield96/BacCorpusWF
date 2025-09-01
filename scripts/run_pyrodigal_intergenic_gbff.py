@@ -41,7 +41,12 @@ def run_pyrodigal(file_list, output_dir, compress, extension):
 
             # train the orf_finder
             orf_finder = pyrodigal.GeneFinder()
-            orf_finder.train("TTAATTAATTAA".join([str(record.seq) for record in sequences]))
+            try:
+                orf_finder.train("TTAATTAATTAA".join([str(record.seq) for record in sequences]))
+            # pass error with pyrodigal for given file
+            except ValueError as e:
+                print(f"Error with pyrodigal for file {file_name}: {str(e)}")
+                continue
 
             # get file basename
             basename = get_basename(file_name)
