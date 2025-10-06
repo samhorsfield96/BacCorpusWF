@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 
 def get_options():
     description = 'Remove files from sketchlib rfile/qfile which are empty.'
@@ -34,3 +35,6 @@ def main():
                 counter += 1
     
     print(f"No. removed: {counter}")
+
+if __name__ == "__main__":
+    main()
