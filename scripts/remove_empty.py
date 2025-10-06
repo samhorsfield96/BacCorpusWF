@@ -17,11 +17,6 @@ def get_options():
 
     return parser.parse_args()
 
-# Input: file containing list of file paths (one per line)
-#input_list = "/nfs/research/jlees/shorsfield/Bacformer_v2/sketching/MGnify_SPIRE_assemblies_qfile.txt"
-# Output: file to store only non-empty file paths
-#output_list = "/nfs/research/jlees/shorsfield/Bacformer_v2/sketching/MGnify_SPIRE_assemblies_qfile_filtered.txt"
-
 def main():
     options = get_options()
 
