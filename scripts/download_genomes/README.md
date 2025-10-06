@@ -39,7 +39,7 @@ ID (e.g. ACIN21-1_SAMN..._MAG_00000001) and, when the tool hits a known edge-cas
 fetch of the .fa/.fa.gz.
 
 
-# Set-Up Steps
+### Set-Up Steps
 
 1) From your project folder
 
@@ -54,7 +54,7 @@ curl -L -o mOTUsv4.0.0a.tar.gz \
   https://sunagawalab.ethz.ch/share/MOTUS/motus-tool/v4.0.0a/mOTUsv4.0.0a.tar.gz
 tar -xzvf mOTUsv4.0.0a.tar.gz
 ```
-# result: ./motus-tool/motus.py exists
+result: ./motus-tool/motus.py exists
 
 ```python
 ls -l motus-tool/motus.py
