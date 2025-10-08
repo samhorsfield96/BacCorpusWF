@@ -1,5 +1,19 @@
 from pathlib import Path
 import argparse
+import gzip
+
+input_list = "file_paths.txt"     # file with list of fasta.gz paths
+output_list = "non_empty_fastas.txt"
+
+def has_fasta_entry(gz_path):
+    try:
+        with gzip.open(gz_path, "rt") as f:  # text mode
+            for line in f:
+                if line.startswith(">"):
+                    return True
+    except Exception as e:
+        print(f"Warning: could not read {gz_path}: {e}")
+    return False
 
 def get_options():
     description = 'Remove files from sketchlib rfile/qfile which are empty.'
@@ -29,8 +43,8 @@ def main():
         for line in infile:
             sample_id, filepath = line.rstrip().split("\t")
             filepath = Path(filepath)
-            if filepath.is_file() and filepath.stat().st_size > 0:
-                outfile.write(str(sample_id) + "\t" + str(filepath) + "\n")
+            if filepath.is_file() and has_fasta_entry(filepath):
+                outfile.write(sample_id + "\t" + str(filepath) + "\n")
             else:
                 counter += 1
     
