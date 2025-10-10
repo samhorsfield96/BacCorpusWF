@@ -107,14 +107,16 @@ def download_one(motus: list[str], genome_id: str, base_out: Path,
                  retries: int, sleep_sec: float, timeout_sec: Optional[int],
                  env: dict, verbose: bool) -> tuple[str, bool, str]:
     gid = genome_id.strip()
-    outdir = base_out / gid
+    outdir = base_out
+    outdir_meta = base_out / "metadata"
     outdir.mkdir(parents=True, exist_ok=True)
+    outdir_meta.mkdir(parents=True, exist_ok=True)
 
     attempt = 0
     last = ""
     while attempt <= retries:
         attempt += 1
-        cmd = [*motus, "download", "-w", gid, "-s", f"{gid}.genomes", "-o", str(outdir)]
+        cmd = [*motus, "download", "-w", gid, "-s", f"{outdir_meta}/{gid}.genomes", "-o", str(outdir)]
         rc, last = run_live(cmd, cwd=None, env=env, timeout_sec=timeout_sec, verbose=verbose)
         if rc == 0:
             return gid, True, "ok"
