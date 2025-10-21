@@ -13,6 +13,9 @@ import re
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError, URLError
 
+from os import listdir
+from os.path import isfile, join
+
 def http_fallback_download(keyerr_msg: str, dest_dir: Path, base_url: str = "https://sunagawalab.ethz.ch/share/MOTUS/database/4.0/data/genomes/") -> tuple[bool, str]:
     """
     Parse the KeyError path from motus output and fetch the .fa.gz directly.
@@ -182,17 +185,25 @@ def main():
     if args.verbose:
         print("MOTUS_DB:", env.get("MOTUS_DB", "(not set)"))
 
+
+    outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
+    #flat_out = outdir / "flat_fastas"
+
     ids = read_ids(Path(args.input), args.source)
     if args.limit is not None:
         ids = ids[: args.limit]
-    print(f"Genomes to download: {len(ids):,}")
 
-    outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
-    flat_out = outdir / "flat_fastas"
+    onlyfiles = [f for f in listdir(outdir)]
+    onlyfiles = set([(os.path.basename(f)).split(".")[0] for f in onlyfiles])
+
+    ids = [f for f in ids if f not in onlyfiles]
+
+    print(f"Genomes to download: {len(ids):,}")
 
     results: list[tuple[str, bool, str]] = []
     timeout_sec = int(args.timeout_min * 60)
 
+    completed = 0
     with ThreadPoolExecutor(max_workers=max(1, args.max_workers)) as ex:
         futs = {ex.submit(download_one, motus, gid, outdir, args.retries, args.sleep, timeout_sec, env, args.verbose): gid
                 for gid in ids}
@@ -202,12 +213,13 @@ def main():
                 _gid, ok, msg = fut.result()
                 print(f"[{'OK' if ok else 'FAIL'}] {gid}  {msg}")
                 results.append((_gid, ok, msg))
+                completed += 1
             except Exception as e:
                 print(f"[FAIL] {gid}  {e}")
                 results.append((gid, False, str(e)))
 
-    moved = collect_fastas(outdir, flat_out, args.verbose)
-    print(f"\nCollected {moved} FASTA files into: {flat_out}")
+    #moved = collect_fastas(outdir, flat_out, args.verbose)
+    print(f"\nCollected {str(completed)} FASTA files into: {outdir}")
 
     man = pd.DataFrame(results, columns=["genome_id", "download_ok", "message"])
     man.to_csv(outdir / "download_manifest.csv", index=False)
