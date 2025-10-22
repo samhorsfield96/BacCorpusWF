@@ -107,3 +107,16 @@ python download_motus_v4_genomes.py \
 Per-genome folders: data/downloads/.../<GenomeID>/
 All FASTAs consolidated: .../flat_fastas/
 Manifest: .../download_manifest.csv (success/fail + messages)
+
+## GTDB
+
+To make the process faster, we are using GTDB as a mapping layer to fetch genomes from NCBI (RefSeq/GenBank). From our deduplicated list (post-MGnify/SPIRE filtering), we download only the required assemblies. The script resolves each GTDB/NCBI ID (e.g. RS_GCF_…, GB_GCA_…, or GCF_/GCA_…) to an NCBI assembly accession—stripping RS_/GB_ prefixes when possible and consulting the selected GTDB release metadata when needed—then retrieves the official *_genomic.fna.gz via HTTPS using NCBI’s assembly summaries. If an assembly path is missing, it falls back to inferring the genomes/all directory and fetching directly.
+
+```python
+PYTHONUNBUFFERED=1 python -u download_gtdb_genomes.py \
+  --input data/outputs/normalized/gtdb.parquet \
+  --outdir ./gtdb_genomes_r226_test \
+  --gtdb-release latest \
+  --max-workers 3 \
+  --verbose
+```
