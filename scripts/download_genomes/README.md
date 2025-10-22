@@ -31,6 +31,21 @@ python scripts/download_genomes/run_download_spire_genomes.py \
 
 The file with all 739 studies is located in `files/spire_study_links.csv`.
 
+## Motus fast download (v2)
+
+We fetch the genomes directly from mOTUs-db v2 using the genome links. We only download the genomes which are not present in
+MGnify or SPIRE (post filtering/deduplication). The genomes of interest can be found in `files/genomes_motus_w_links.parquet` file.
+There is in total 2.8M genomes in mOTUs-db v2 after filtering out the genomes present in MGnify/SPIRE.
+
+
+```python
+python scripts/download_genomes/run_download_motus_genomes_v2.py \
+       --input_filepath files/genomes_motus_w_links.parquet \
+        --output_dir <output-dir> \
+        --num_workers 8
+```
+
+
 ## Motus
 
 We fetch genomes directly from mOTUs-db v4 (catalog ~3.75M genomes). From our deduplicated list (post
