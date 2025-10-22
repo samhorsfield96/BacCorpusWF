@@ -40,9 +40,9 @@ There is in total 2.8M genomes in mOTUs-db v2 after filtering out the genomes pr
 
 ```python
 python scripts/download_genomes/run_download_motus_genomes_v2.py \
-       --input_filepath files/genomes_motus_w_links.parquet \
-        --output_dir <output-dir> \
-        --num_workers 8
+    --input_filepath files/genomes_motus_w_links.parquet \
+    --output_dir <output-dir> \
+    --num_workers 8
 ```
 
 
