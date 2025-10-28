@@ -9,6 +9,8 @@ import requests
 from tqdm.auto import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from os import listdir
+from os.path import isfile, join, basename
 
 def _unique_name(output_dir: Path, url_path_basename: str) -> Path:
     """
@@ -116,6 +118,18 @@ def run(
 
     # read the input path
     df = pd.read_parquet(input_filepath)
+
+    # get genomes that are to be downloaded
+    ids = (df["genome_id"].dropna().astype(str).str.strip()
+           .replace({"": pd.NA}).dropna().drop_duplicates().tolist())
+    if not ids:
+        sys.exit("No genome_id values found after filtering.")
+
+    onlyfiles = [f for f in listdir(outdir)]
+    onlyfiles = set([(basename(f)).split(".")[0] for f in onlyfiles])
+
+    df = df[~df["genome_id"].astype(str).isin(onlyfiles)]
+
     # limit to first N genomes if specified (for testing)
     if limit_n_genomes is not None:
         df = df.iloc[:limit_n_genomes]

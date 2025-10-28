@@ -334,8 +334,8 @@ def download_one(acc_or_id: str,
     """
     gid = acc_or_id
     acc = acc_map.get(gid, "")
-    outdir = base_out / (acc if acc else gid)
-    outdir.mkdir(parents=True, exist_ok=True)
+    outdir = base_out #/ (acc if acc else gid)
+    #outdir.mkdir(parents=True, exist_ok=True)
 
     if not acc:
         return gid, "", False, "No NCBI accession found via GTDB metadata"
@@ -472,8 +472,8 @@ def main():
                 results.append((gid, "", False, str(e)))
 
     # 5) Flatten FASTAs
-    moved = collect_fastas(outdir, flat_out, args.verbose)
-    log(f"\nCollected {moved} FASTA files into: {flat_out}")
+    #moved = collect_fastas(outdir, flat_out, args.verbose)
+    #log(f"\nCollected {moved} FASTA files into: {flat_out}")
 
     # 6) Manifest
     man = pd.DataFrame(results, columns=["input_id", "assembly_accession", "download_ok", "message"])
