@@ -105,3 +105,21 @@ PYTHONUNBUFFERED=1 python -u download_gtdb_genomes.py \
   --max-workers 3 \
   --verbose
 ```
+
+
+
+## HRGM
+
+To speed things up, we pull required genomes directly from HRGM2 (decodebiome.org). From our deduplicated list (post-MGnify/SPIRE filtering), we download only the entries we need. The script accepts both HRGMv2 representative IDs (HRGMv2_####) and HRGM2 GENOME IDs (GENOME######).
+
+```python
+python run_download_hrgm_genomes.py \
+  --input data/outputs/derived/not_in_corpus/derep_metadata_genomes_missing_from_corpus.parquet \
+  --collection auto \
+  --outdir out_hrgm2_full \
+  --max-workers 8 \
+  --retries 3 \
+  --sleep 2 \
+  --timeout-min 20 \
+  --verbose
+```
