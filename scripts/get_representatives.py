@@ -2,9 +2,9 @@ import argparse
 from collections import defaultdict
 
 def get_options():
-    description = "Annotates tokenised gene clusters"
+    description = "Get's representatives from sketchlib distance calculations"
     parser = argparse.ArgumentParser(description=description,
-                                        prog='python annotate_tokens.py')
+                                        prog='python get_representatives.py')
     IO = parser.add_argument_group('Input/options.out')
     IO.add_argument('--infile',
                     required=True,
@@ -21,6 +21,10 @@ def get_options():
             default=0.98,
             type=float,
             help='Threshold for deduplication. Default = 0.98')
+    IO.add_argument('--query',
+            default=False,
+            action= "store_true",
+            help='Specify if this is a queried sketchlib run.')
     IO.add_argument('--outpref',
                 default="distances",
                 help='Output prefix. Default = distances')
@@ -55,26 +59,41 @@ def return_reps(options):
     to_ignore = set()
     to_keep = set()
     max_distances = {}
+    line_count = 0
     with open(options.infile, "r") as f1:
         for line in f1:
             split_line = line.rstrip().split("\t")
             genome1, genome2, distance = split_line[0], split_line[1], float(split_line[2])
 
-            # if genome1 seen before, ignore
-            if genome1 in to_ignore or genome1 in to_keep:
+            # determine which genome should be being added
+            # when querying, each genome will only be in second column
+            # if not, each genome will always in the first column
+            if options.query:
+                query = genome1
+                reference = genome2
+            else:
+                reference = genome1
+                query = genome2
+
+            # if reference seen before, ignore
+            if reference in to_ignore or reference in to_keep:
                 continue
 
             # if above distance, ignore second genome, take first as representative
             if distance >= options.threshold:
-                to_keep.add(genome1)
-                to_ignore.add(genome2)
-            
-            # keep track of max distance in case no distances are above threshold, need to add later
-            if genome1 in max_distances:
-                if distance > max_distances[genome1]:
-                    max_distances[genome1] = distance
+                to_keep.add(reference)
+                to_ignore.add(query)
             else:
-                max_distances[genome1] = distance
+                # keep track of max distance in case no distances are above threshold, need to add later
+                if reference in max_distances:
+                    if distance > max_distances[reference]:
+                        max_distances[reference] = distance
+                else:
+                    max_distances[reference] = distance
+            
+            # line_count += 1
+            # if line_count % 1000000 == 0:
+            #     print(f"Distance count: {line_count}")
     
     # go through max_distances to see if any other genomes must be added
     counter = 0
@@ -97,8 +116,13 @@ def return_reps(options):
         
         print(f"Adding {remaining} genomes to make up numbers.")
 
-        for i in range(0, remaining):
-            to_keep.add(to_ignore[i])
+        added = 0
+        for element in to_ignore:
+            to_keep.add(element)
+            added += 1
+
+            if added >= remaining:
+                break
 
     with open(options.outpref + "_reps.txt", "w") as f2:
         for genome in to_keep:
