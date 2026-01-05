@@ -10,3 +10,4 @@ dependencies:
   - natsort
   - tqdm
   - pyarrow
+  - pandas
