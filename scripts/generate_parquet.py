@@ -131,6 +131,9 @@ def get_options():
     IO.add_argument('--outdir',
                 default="output",
                 help='Output directory. Default = output')
+    IO.add_argument('--source',
+                default="NA",
+                help='Source label. Default = NA')
     IO.add_argument('--max-file-size',
                 default=2e10,
                 type=lambda x: int(float(x)),
@@ -152,6 +155,11 @@ def main():
     count = 0
     for genome_table in iter_genome_tables(root):
         count += 1
+
+        # add source column
+        n = genome_table.num_rows
+        source_array = pa.array([options.source] * n)
+        genome_table = genome_table.add_column(0, "source", source_array)
         genome_size = genome_table.nbytes
 
         # Genome alone exceeds limit → write alone
