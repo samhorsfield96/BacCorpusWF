@@ -173,11 +173,13 @@ def main():
         batch_tables.append(genome_table)
         batch_size += genome_size
 
-        if count % 10 == 0:
-            print(f"Count: {count}")
+        if count % 10000 == 0:
+            print(f"Count: {count}", file=sys.stderr)
 
     if batch_tables:
         flush(batch_tables, file_idx, options.outdir)
+    
+    print(f"Total files iterated: {count}")
 
 if __name__ == "__main__":
     main()
