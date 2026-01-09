@@ -77,7 +77,8 @@ def iter_gbff(path):
                     sequence = str(feature.extract(record.seq))
                     molecule = "DNA"
 
-                feature_id = int(feature.qualifiers["feature_id"][0].split("_")[-1])
+                print(feature.qualifiers["feature_id"])
+                feature_id = int(feature.qualifiers["feature_id"][0].split()[0].split("_")[-1])
 
                 entry = {
                     "sample": sample_id,
