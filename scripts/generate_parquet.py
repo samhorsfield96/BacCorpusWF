@@ -101,7 +101,7 @@ def iter_genome_tables(root):
         if element.is_file() and pattern.match(element_str):
             # current only works on gbff files
             if ".gbff" in element_str:
-                print(element_str)
+                #print(element_str)
                 rows = []
                 for entry in iter_gbff(element_str):
                     rows.append(entry)
@@ -110,11 +110,11 @@ def iter_genome_tables(root):
                 if rows:
                     yield pa.Table.from_pylist(rows)
 
-def flush(tables, idx, outdir):
+def flush(tables, idx, outdir, count):
     table = pa.concat_tables(tables, promote=True)
     out_path = f"{outdir}/batch_{idx:04d}.parquet"
     pq.write_table(table, out_path)
-    print(f"[WRITE] {out_path} ({table.nbytes / 1e6:.2f} MB)")
+    print(f"[WRITE] Count: {count} {out_path} ({table.nbytes / 1e6:.2f} MB)", file=sys.stderr)
     return idx + 1
 
 # regex pattern to search for files
@@ -157,16 +157,16 @@ def main():
         # Genome alone exceeds limit → write alone
         if genome_size > options.max_file_size:
             if batch_tables:
-                file_idx = flush(batch_tables, file_idx, options.outdir)
+                file_idx = flush(batch_tables, file_idx, options.outdir, count)
                 batch_tables.clear()
                 batch_size = 0
 
-            file_idx = flush([genome_table], file_idx, options.outdir)
+            file_idx = flush([genome_table], file_idx, options.outdir, count)
             continue
 
         # Would overflow current batch?
         if batch_size + genome_size > options.max_file_size:
-            file_idx = flush(batch_tables, file_idx, options.outdir)
+            file_idx = flush(batch_tables, file_idx, options.outdir, count)
             batch_tables.clear()
             batch_size = 0
 
@@ -177,7 +177,7 @@ def main():
             print(f"Count: {count}", file=sys.stderr)
 
     if batch_tables:
-        flush(batch_tables, file_idx, options.outdir)
+        flush(batch_tables, file_idx, options.outdir, count)
     
     print(f"Total files iterated: {count}")
 
