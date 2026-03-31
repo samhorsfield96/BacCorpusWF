@@ -58,9 +58,13 @@ def iter_gbff(path):
         fh.close()
         # fixes bug where first contig is missed
         for record in SeqIO.parse(fixed_stream, "genbank"):
-            record_id = re.split(r'\.(?:fa|fas|fasta|fna|faa)_', record.id, maxsplit=1, flags=re.IGNORECASE)
-            sample_id = record_id[0]
-            contig = record_id[1]
+            match = re.search(r'\.(?:fa|fas|fasta|fna|faa)_', record.id, flags=re.IGNORECASE)
+            if match:
+                sample_id = record.id[:match.end() - 1]
+                contig = record.id[match.end():]
+            else:
+                sample_id = record.id
+                contig = ""
 
             for feature in record.features:
                 if not feature.location:
