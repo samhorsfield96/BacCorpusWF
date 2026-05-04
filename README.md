@@ -1,5 +1,5 @@
-# bfv2_prep
-Scripts for generating training datasets for Bacformer v2.
+# BacCorpusWF
+BacCorpus WorkFlow (WF) - scripts for generating datasets for [BacCorpus](https://huggingface.co/AllTheBacteria).
 
 ## Dependencies:
 
