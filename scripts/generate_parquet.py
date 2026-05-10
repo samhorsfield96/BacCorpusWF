@@ -60,7 +60,7 @@ def iter_gbff(path):
         for record in SeqIO.parse(fixed_stream, "genbank"):
             match = re.search(r'\.(?:fa|fas|fasta|fna|faa)_', record.id, flags=re.IGNORECASE)
             if match:
-                sample_id = record.id[:match.end() - 1]
+                sample_id = record.id[:match.start()]
                 contig = record.id[match.end():]
             else:
                 sample_id = record.id

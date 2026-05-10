@@ -77,6 +77,9 @@ def return_reps(options):
 
             # if reference seen before, ignore
             if reference in to_ignore or reference in to_keep:
+                # need to account for query if threshold met, need to ignore in future analysis
+                if distance >= options.threshold:
+                    to_ignore.add(query)
                 continue
 
             # if above distance, ignore second genome, take first as representative
