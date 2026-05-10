@@ -17,22 +17,31 @@ def get_options():
             default=1000,
             type=int,
             help='Minimum number of genomes to return. Default = 1000')
-    IO.add_argument('--threshold',
-            default=0.98,
-            type=float,
-            help='Threshold for deduplication. Default = 0.98')
+    IO.add_argument('--thresholds',
+            default="0.98",
+            type=str,
+            help='Comma separated list of thresholds for deduplication. Default = 0.98')
     IO.add_argument('--query',
             default=False,
             action= "store_true",
             help='Specify if this is a queried sketchlib run.')
+    IO.add_argument('--verbose',
+            default=False,
+            action= "store_true",
+            help='Enable verbose output.')
     IO.add_argument('--outpref',
                 default="distances",
                 help='Output prefix. Default = distances')
     return parser.parse_args()
 
+def parse_thresholds(threshold_string):
+    thresholds = threshold_string.split(",")
+    return sorted([float(threshold) for threshold in thresholds], reverse=False)
+
 # return topN most distance genomes
 def topN(options):
     options = get_options()
+    thresholds = parse_thresholds(options.thresholds)
 
     distance_counts = defaultdict(list)
     with open(options.infile, "r") as f1:
@@ -55,11 +64,13 @@ def topN(options):
 
 def return_reps(options):
     options = get_options()
+    parsed_thresholds = parse_thresholds(options.thresholds)
 
-    to_ignore = set()
-    to_keep = set()
-    max_distances = {}
-    line_count = 0
+    threshold_dict = {}
+    for threshold in parsed_thresholds:
+        threshold_dict[threshold] = {"to_keep": set(), "to_ignore": set(), "max_distances": {}}
+
+    # iterate through all thresholds, starting at lowest which then assigns genomes to higher thresholds
     with open(options.infile, "r") as f1:
         for line in f1:
             split_line = line.rstrip().split("\t")
@@ -75,24 +86,37 @@ def return_reps(options):
                 reference = genome1
                 query = genome2
 
-            # if reference seen before, ignore
-            if reference in to_ignore or reference in to_keep:
-                # need to account for query if threshold met, need to ignore in future analysis
-                if distance >= options.threshold:
-                    to_ignore.add(query)
-                continue
+            # iterate through all thresholds, ensuring that genomes are added consistently across thresholds
+            for threshold_idx, threshold in enumerate(parsed_thresholds):
+                if reference in threshold_dict[threshold]["to_ignore"] or reference in threshold_dict[threshold]["to_keep"]:
+                    # need to account for query if threshold met, need to ignore in future analysis
+                    if distance >= threshold and query not in threshold_dict[threshold]["to_keep"]:
+                        if options.verbose:
+                            print(f"Adding {query} to ignore for threshold {threshold} because {reference} is already assigned and distance is above threshold.")
+                        threshold_dict[threshold]["to_ignore"].add(query)
+                    continue
 
-            # if above distance, ignore second genome, take first as representative
-            if distance >= options.threshold:
-                to_keep.add(reference)
-                to_ignore.add(query)
-            else:
-                # keep track of max distance in case no distances are above threshold, need to add later
-                if reference in max_distances:
-                    if distance > max_distances[reference]:
-                        max_distances[reference] = distance
+                # if above distance, ignore second genome, take first as representative
+                if distance >= threshold:
+                    # add this representative to all higher thresholds, and add query to ignore for this threshold
+                    for higher_threshold in parsed_thresholds[threshold_idx:]:
+                        if options.verbose:
+                            print(f"Adding {reference} to keep for threshold {higher_threshold}.")
+                        threshold_dict[higher_threshold]["to_keep"].add(reference)
+                    if options.verbose:
+                        print(f"Adding {query} to ignore for threshold {threshold}.")
+                    threshold_dict[threshold]["to_ignore"].add(query)
                 else:
-                    max_distances[reference] = distance
+                    # keep track of max distance in case no distances are above threshold, need to add later
+                    if reference in threshold_dict[threshold]["max_distances"]:
+                        if distance > threshold_dict[threshold]["max_distances"][reference]:
+                            if options.verbose:
+                                print(f"Updating max distance for {reference} to {distance} for threshold {threshold}.")
+                            threshold_dict[threshold]["max_distances"][reference] = distance
+                    else:
+                        if options.verbose:
+                            print(f"Adding max distance for {reference} to {distance} for threshold {threshold}.")
+                        threshold_dict[threshold]["max_distances"][reference] = distance
             
             # line_count += 1
             # if line_count % 1000000 == 0:
@@ -100,36 +124,44 @@ def return_reps(options):
     
     # go through max_distances to see if any other genomes must be added
     counter = 0
-    for key, value in max_distances.items():
-        if key not in to_keep and key not in to_ignore:
-            if value < options.threshold:
-                to_keep.add(key)
-                counter += 1
-    
-    print(f"Adding {counter} genomes with all distances below threshold.")
-    
-    # determine length of to_keep and add random to_ignore to make up remaining missing genomes
-    num_keep = len(to_keep)
-    remaining = options.min_return - num_keep
-    if remaining > 0:
-        num_ignore = len(to_ignore)
+    for threshold in parsed_thresholds:
+        if options.verbose:
+            print(f"Processing threshold {threshold}.")
+            print(f"{threshold_dict[threshold]['to_keep']} genomes kept and {threshold_dict[threshold]['to_ignore']} genomes ignored for threshold {threshold} before checking max distances.")
 
-        if remaining > num_ignore:
-            remaining = num_ignore
+        for key, value in threshold_dict[threshold]["max_distances"].items():
+            if key not in threshold_dict[threshold]["to_keep"] and key not in threshold_dict[threshold]["to_ignore"]:
+                if value < threshold:
+                    threshold_dict[threshold]["to_keep"].add(key)
+                    counter += 1
         
-        print(f"Adding {remaining} genomes to make up numbers.")
+        if options.verbose:
+            print(f"{threshold_dict[threshold]['to_keep']} genomes kept and {threshold_dict[threshold]['to_ignore']} genomes ignored for threshold {threshold} after checking max distances.")
+        
+        print(f"Adding {counter} genomes with all distances below threshold {threshold}.")
+    
+        # determine length of to_keep and add random to_ignore to make up remaining missing genomes
+        num_keep = len(threshold_dict[threshold]["to_keep"])
+        remaining = options.min_return - num_keep
+        if remaining > 0:
+            num_ignore = len(threshold_dict[threshold]["to_ignore"])
 
-        added = 0
-        for element in to_ignore:
-            to_keep.add(element)
-            added += 1
+            if remaining > num_ignore:
+                remaining = num_ignore
+            
+            print(f"Adding {remaining} genomes to make up numbers.")
 
-            if added >= remaining:
-                break
+            added = 0
+            for element in threshold_dict[threshold]["to_ignore"]:
+                threshold_dict[threshold]["to_keep"].add(element)
+                added += 1
 
-    with open(options.outpref + "_reps.txt", "w") as f2:
-        for genome in to_keep:
-            f2.write(str(genome) + "\n")
+                if added >= remaining:
+                    break
+
+        with open(options.outpref + f"_{threshold}_reps.txt", "w") as f2:
+            for genome in threshold_dict[threshold]["to_keep"]:
+                f2.write(str(genome) + "\n")
 
 def main():
     options = get_options()
