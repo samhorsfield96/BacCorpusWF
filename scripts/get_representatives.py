@@ -1,6 +1,7 @@
 import argparse
 import random
 from collections import defaultdict
+import networkx as nx
 
 def get_options():
     description = "Get's representatives from sketchlib distance calculations"
@@ -174,8 +175,9 @@ def return_reps(options):
             print(f"Adding {remaining} genomes to make up numbers.")
 
             added = 0
-            for element in threshold_dict[threshold]["to_ignore"]:
+            for element in list(threshold_dict[threshold]["to_ignore"]):
                 threshold_dict[threshold]["to_keep"].add(element)
+                threshold_dict[threshold]["to_ignore"].remove(element)
                 added += 1
 
                 if added >= remaining:
@@ -183,7 +185,9 @@ def return_reps(options):
 
         with open(options.outpref + f"_{threshold}_reps.txt", "w") as f2:
             for genome in threshold_dict[threshold]["to_keep"]:
-                f2.write(str(genome) + "\n")
+                # do not add if in to_ignore for this threshold
+                if genome not in threshold_dict[threshold]["to_ignore"]:
+                    f2.write(str(genome) + "\n")
 
 def return_reps_graph(options):
     """Graph-based alternative to return_reps.
@@ -217,7 +221,7 @@ def return_reps_graph(options):
             else:
                 reference, query = genome1, genome2
 
-            if options.to_keep is not None and reference not in qc_reps_to_keep:
+            if options.to_keep is not None and (reference not in qc_reps_to_keep or query not in qc_reps_to_keep):
                 continue
 
             all_genomes.add(reference)
@@ -227,44 +231,17 @@ def return_reps_graph(options):
                 if distance >= threshold:
                     edges_per_threshold[threshold].append((reference, query))
 
-    # Union-Find with path compression and union by rank
-    def make_uf(nodes):
-        parent = {n: n for n in nodes}
-        rank = {n: 0 for n in nodes}
-
-        def find(x):
-            while parent[x] != x:
-                parent[x] = parent[parent[x]]  # path halving
-                x = parent[x]
-            return x
-
-        def union(x, y):
-            px, py = find(x), find(y)
-            if px == py:
-                return
-            if rank[px] < rank[py]:
-                px, py = py, px
-            parent[py] = px
-            if rank[px] == rank[py]:
-                rank[px] += 1
-
-        return find, union
-
     # Track organic representatives across thresholds to enforce nesting.
     # As threshold increases, components can only split (never merge), so each
     # sub-component at a higher threshold contains at most one inherited rep.
     previous_organic = set()
 
     for threshold in parsed_thresholds:
-        find, union = make_uf(all_genomes)
+        G = nx.Graph()
+        G.add_nodes_from(all_genomes)
+        G.add_edges_from(edges_per_threshold[threshold])
 
-        for ref, qry in edges_per_threshold[threshold]:
-            union(ref, qry)
-
-        # Group genomes by component root
-        components = defaultdict(list)
-        for genome in all_genomes:
-            components[find(genome)].append(genome)
+        components = list(nx.connected_components(G))
 
         if options.verbose:
             print(f"Threshold {threshold}: {len(components)} connected components from {len(all_genomes)} genomes.")
@@ -274,16 +251,16 @@ def return_reps_graph(options):
         # inherit it so that representative sets are nested across thresholds.
         # Otherwise prefer QC-listed genomes, then fall back to random.
         organic_representatives = set()
-        for component_genomes in components.values():
+        for component_genomes in components:
             inherited = [g for g in component_genomes if g in previous_organic]
             if inherited:
                 organic_representatives.update(inherited)
             else:
                 if qc_reps_to_keep:
                     preferred = [g for g in component_genomes if g in qc_reps_to_keep]
-                    rep = random.choice(preferred) if preferred else random.choice(component_genomes)
+                    rep = random.choice(preferred) if preferred else random.choice(list(component_genomes))
                 else:
-                    rep = random.choice(component_genomes)
+                    rep = random.choice(list(component_genomes))
                 organic_representatives.add(rep)
 
         # Top up to min_return if needed (top-up genomes are not carried forward)
