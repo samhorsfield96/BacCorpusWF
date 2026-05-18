@@ -221,11 +221,16 @@ def return_reps_graph(options):
             else:
                 reference, query = genome1, genome2
 
-            if options.to_keep is not None and (reference not in qc_reps_to_keep or query not in qc_reps_to_keep):
-                continue
-
-            all_genomes.add(reference)
-            all_genomes.add(query)
+            if options.to_keep is not None:
+                if reference in qc_reps_to_keep:
+                    all_genomes.add(reference)
+                if query in qc_reps_to_keep:
+                    all_genomes.add(query)
+                if reference not in qc_reps_to_keep and query not in qc_reps_to_keep:
+                    continue
+            else:
+                all_genomes.add(reference)
+                all_genomes.add(query)
 
             for threshold in parsed_thresholds:
                 if distance >= threshold:
