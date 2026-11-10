@@ -70,11 +70,11 @@ mutate_genome <- function(genome.ref, prop.match) {
 k <- 21
 
 # Generate reference genome once
-genome.size <- 5e4
+genome.size <- 5e7
 genome.ref <- generate_sequence(genome.size)
 kmers.ref <- extract_kmers(genome.ref, k)
 
-sketch.list <- c(500, 1000, 2000, 5000, 10000)
+sketch.list <- c(10000, 20000, 30000)
 props.list <- seq(from = 0.7, to = 1.0, by = 0.05)
 
 sketch.ref <- minhash_sketch(kmers.ref, max(sketch.list))  # Pre-compute sketch for reference
@@ -88,6 +88,7 @@ rownames(results_matrix) <- paste0("sk", sketch.list)
 
 # Simulation
 for (p in seq_along(props.list)) {
+  print(paste("P:", p))
   prop.match <- props.list[p]
   
   # Generate query genome with mutations
@@ -99,6 +100,7 @@ for (p in seq_along(props.list)) {
   
   # Loop over sketch sizes
   for (s in seq_along(sketch.list)) {
+    print(paste("S:", s))
     sketch.size <- sketch.list[s]
     
     # Use pre-computed reference sketch (subset to sketch.size)
