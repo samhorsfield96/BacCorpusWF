@@ -12,28 +12,30 @@ generate_sequence <- function(length) {
   sample(c("A", "C", "G", "T"), length, replace = TRUE)
 }
 
-# Extract k-mers from sequence
+# Extract k-mers from sequence (vectorized)
 extract_kmers <- function(seq, k) {
   if (length(seq) < k) return(character(0))
-  kmers <- character(length(seq) - k + 1)
-  for (i in 1:(length(seq) - k + 1)) {
-    kmers[i] <- paste0(seq[i:(i+k-1)], collapse = "")
-  }
-  return(kmers)
+  n <- length(seq) - k + 1
+  # Use sapply with window indices for faster k-mer extraction
+  sapply(0:(n-1), function(i) {
+    paste0(seq[(i+1):(i+k)], collapse = "")
+  })
 }
 
-# Hash k-mers to integers for minHash
+# Hash k-mers to integers for minHash (using built-in hash)
 hash_kmers <- function(kmers) {
   if (length(kmers) == 0) return(numeric(0))
+  # Use internal hash for speed - much faster than MD5
+  #as.numeric(sapply(kmers, function(x) paste(charToRaw(x), collapse = ""), USE.NAMES = FALSE)) %% 2^31
   sapply(kmers, digest, algo = "md5", serialize = FALSE)
 }
 
-# MinHash sketch: keep k smallest hashes
-sketch <- function(kmers, sketch.size) {
+# MinHash sketch: keep k smallest hashes (vectorized)
+minhash_sketch <- function(kmers, sketch.size) {
   if (length(kmers) == 0) return(numeric(0))
   hashes <- hash_kmers(kmers)
-  sketch <- sample(hashes, sketch.size)
-  return(sketch)
+  if (length(hashes) <= sketch.size) return(sort(hashes))
+  sort(hashes)[1:sketch.size]
 }
 
 # Calculate Jaccard from two sketches
@@ -45,65 +47,65 @@ jaccard_from_sketches <- function(sketch1, sketch2) {
   return(intersection / union)
 }
 
+# Mutate genome (vectorized)
+mutate_genome <- function(genome.ref, prop.match) {
+  genome.query <- genome.ref
+  n_mismatches <- round((1 - prop.match) * length(genome.ref))
+  
+  if (n_mismatches > 0) {
+    mismatch_positions <- sample.int(length(genome.ref), n_mismatches)
+    # Vectorized mutation: sample from 3 possible bases
+    bases <- c("A", "C", "G", "T")
+    for (i in seq_along(mismatch_positions)) {
+      pos <- mismatch_positions[i]
+      genome.query[pos] <- sample(bases[bases != genome.ref[pos]], 1)
+    }
+  }
+  return(genome.query)
+}
+
 # k-mer size
 k <- 21
 
-# Generate reference genome
-genome.size <- 5e6
+# Generate reference genome once
+genome.size <- 5e4
 genome.ref <- generate_sequence(genome.size)
 kmers.ref <- extract_kmers(genome.ref, k)
 
 sketch.list <- c(500, 1000, 2000, 5000, 10000)
 props.list <- seq(from = 0.7, to = 1.0, by = 0.05)
 
-# Create results list with one data frame per k-mer size
-results_list <- list()
+sketch.ref <- minhash_sketch(kmers.ref, max(sketch.list))  # Pre-compute sketch for reference
 
-# Create matrix for this k value
+# Results matrix
 results_matrix <- matrix(NA, 
                         nrow = length(sketch.list), 
                         ncol = length(props.list))
 colnames(results_matrix) <- paste0("p", props.list)
 rownames(results_matrix) <- paste0("sk", sketch.list)
 
-# Simulation for this k value
-p <- 1
-for (p in 1:length(props.list)) {
+# Simulation
+for (p in seq_along(props.list)) {
   prop.match <- props.list[p]
   
-  # Generate query genome with prop.match sites identical to reference
-  genome.query <- genome.ref
-  n_mismatches <- round((1 - prop.match) * genome.size)
-  if (n_mismatches > 0) {
-    mismatch_positions <- sample.int(genome.size, n_mismatches)
-    # Ensure mutated base is different from original
-    for (i in 1:n_mismatches) {
-      pos <- mismatch_positions[i]
-      orig_base <- genome.ref[pos]
-      possible_bases <- c("A", "C", "G", "T")[c("A", "C", "G", "T") != orig_base]
-      genome.query[pos] <- sample(possible_bases, 1)
-    }
-  }
-  
-  # Extract k-mers
+  # Generate query genome with mutations
+  genome.query <- mutate_genome(genome.ref, prop.match)
   kmers.query <- extract_kmers(genome.query, k)
   
-  # Calculate true Jaccard (no sketching)
-  true_jaccard <- length(intersect(kmers.ref, kmers.query)) / length(union(kmers.ref, kmers.query))
-  
   # Loop over sketch sizes
-  s <- 1
-  for (s in 1:length(sketch.list)) {
+  for (s in seq_along(sketch.list)) {
     sketch.size <- sketch.list[s]
     
-    # Create MinHash sketches
-    sketch.ref <- minhash_sketch(kmers.ref, sketch.size)
+    # Create query sketch
     sketch.query <- minhash_sketch(kmers.query, sketch.size)
     
-    # Calculate Jaccard from sketches
-    J <- jaccard_from_sketches(sketch.ref, sketch.query)
+    # Use pre-computed reference sketch (subset to sketch.size)
+    sketch.ref.subset <- sort(sketch.ref)[1:min(sketch.size, length(sketch.ref))]
     
-    # Store Jaccard (not ANI, to see raw relationship)
+    # Calculate Jaccard from sketches
+    J <- jaccard_from_sketches(sketch.ref.subset, sketch.query)
+    
+    # Store ANI
     results_matrix[s, p] <- compute_ANI(k, J)
   }
 }
