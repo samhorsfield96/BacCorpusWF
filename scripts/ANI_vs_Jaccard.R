@@ -22,12 +22,14 @@ extract_kmers <- function(seq, k) {
   })
 }
 
-# Hash k-mers to integers for minHash (using built-in hash)
+# Hash k-mers to integers for minHash (using MD5 converted to numeric)
 hash_kmers <- function(kmers) {
   if (length(kmers) == 0) return(numeric(0))
-  # Use internal hash for speed - much faster than MD5
-  #as.numeric(sapply(kmers, function(x) paste(charToRaw(x), collapse = ""), USE.NAMES = FALSE)) %% 2^31
-  sapply(kmers, digest, algo = "md5", serialize = FALSE)
+  # Use MD5 hash converted to numeric (take first 8 hex chars)
+  sapply(kmers, function(x) {
+    h <- digest(x, algo = "md5", serialize = FALSE)
+    as.numeric(paste0("0x", substr(h, 1, 8)))
+  })
 }
 
 # MinHash sketch: keep k smallest hashes (vectorized)
@@ -92,18 +94,19 @@ for (p in seq_along(props.list)) {
   genome.query <- mutate_genome(genome.ref, prop.match)
   kmers.query <- extract_kmers(genome.query, k)
   
+  # Create query sketch
+  sketch.query <- minhash_sketch(kmers.query, max(sketch.list))
+  
   # Loop over sketch sizes
   for (s in seq_along(sketch.list)) {
     sketch.size <- sketch.list[s]
     
-    # Create query sketch
-    sketch.query <- minhash_sketch(kmers.query, sketch.size)
-    
     # Use pre-computed reference sketch (subset to sketch.size)
     sketch.ref.subset <- sort(sketch.ref)[1:min(sketch.size, length(sketch.ref))]
+    sketch.query.subset <- sort(sketch.query)[1:min(sketch.size, length(sketch.query))]
     
     # Calculate Jaccard from sketches
-    J <- jaccard_from_sketches(sketch.ref.subset, sketch.query)
+    J <- jaccard_from_sketches(sketch.ref.subset, sketch.query.subset)
     
     # Store ANI
     results_matrix[s, p] <- compute_ANI(k, J)
